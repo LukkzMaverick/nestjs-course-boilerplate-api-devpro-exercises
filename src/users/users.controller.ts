@@ -1,87 +1,50 @@
-import { UserDto } from './dto/user.dto';
-import { UuidValidationPipe } from './../common/pipes/UuidValidationPipe';
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  HttpStatus,
+  Get,
   HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
 } from '@nestjs/common';
+import { UuidValidationPipe } from './../validators/UuidValidationPipe';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+
 import { UsersService } from './users.service';
-import {
-  ApiNotFoundResponse,
-  ApiOkResponse,
-  ApiOperation,
-} from '@nestjs/swagger';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiOperation({
-    operationId: 'user_create',
-    description: 'Endpoint to create a new user',
-  })
-  @ApiOkResponse({
-    description: 'Success user created',
-  })
-  async create(@Body() createUserDto: CreateUserDto): Promise<UserDto> {
-    return await this.usersService.create(createUserDto);
-  }
-
-  @Get()
-  @ApiOperation({
-    operationId: 'user_findAll',
-    description: 'Endpoint to find all',
-  })
-  async findAll(): Promise<UserDto[]> {
-    return this.usersService.findAll();
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Get(':id')
-  @ApiOperation({
-    operationId: 'user_findOne',
-    description: 'Endpoint to create a new user',
-  })
-  @ApiOkResponse({
-    description: 'Success user created',
-  })
-  @ApiNotFoundResponse({
-    description: 'Was not able to find user',
-  })
-  async findOne(
-    @Param('id', UuidValidationPipe)
-    id: string,
-  ) {
+  findOne(@Param('id', UuidValidationPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
-  @ApiOperation({
-    operationId: 'user_update',
-    description: 'Endpoint to update user',
-  })
+  @Get()
+  findAll() {
+    return this.usersService.findAll();
+  }
+
   @Patch(':id')
-  async update(
+  update(
     @Param('id', UuidValidationPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
   }
 
-  @ApiOperation({
-    operationId: 'user_delete',
-    description: 'Endpoint to delete all',
-  })
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async remove(@Param('id', UuidValidationPipe) id: string) {
+  remove(@Param('id', UuidValidationPipe) id: string) {
     return this.usersService.remove(id);
   }
 }

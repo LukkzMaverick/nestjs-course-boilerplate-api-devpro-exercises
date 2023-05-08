@@ -1,71 +1,69 @@
-import { User } from './entities/user.entity';
-import { UserDto } from './dto/user.dto';
-import { plainToInstance } from 'class-transformer';
-import { Repository } from 'typeorm';
-
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private repo: Repository<User>,
-  ) {}
-
-  public async create(createUser: CreateUserDto): Promise<UserDto> {
-    const user = this.repo.create(createUser);
-    const dbUser = await this.repo.save(user);
-    return plainToInstance(UserDto, dbUser);
+  public users: User[];
+  constructor() {
+    this.users = [];
   }
 
-  public async findAll(): Promise<UserDto[]> {
-    const users = await this.repo.find({
-      relations: ['userRoles'],
-    });
-    return plainToInstance(UserDto, users);
+  private convertToUser(createUser: CreateUserDto): User {
+    const user = new User();
+    user.username = createUser.username;
+    user.password = createUser.password;
+    user.firstName = createUser.firstName;
+    user.lastName = createUser.lastName;
+    user.email = createUser.email;
+    user.active = true;
+    user.id = randomUUID();
+    return user;
   }
 
-  private async findById(id: string): Promise<User> {
-    // Get without relationships
-    // const user = await this.repo.findOneBy({
-    //   id,
-    // });
-    const user = await this.repo.findOne({
-      where: { id },
-      relations: ['userRoles'],
-    });
-    if (!user) throw new NotFoundException();
-    return plainToInstance(UserDto, user);
-  }
-
-  public async findOne(id: string): Promise<UserDto> {
-    const user = await this.findById(id);
-    return plainToInstance(UserDto, user);
-  }
-
-  public async update(
-    id: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<UserDto> {
-    const user = await this.findById(id);
-    const newUser: User = {
-      ...user,
-      ...updateUserDto,
+  private returnUser(user: Partial<User>): Partial<User> {
+    const retUser = {
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      active: user.active,
+      id: user.id,
     };
-    this.repo.save(newUser);
-    return plainToInstance(UserDto, newUser);
+    return retUser;
   }
 
-  public async remove(id: string): Promise<void> {
-    const user = await this.findById(id);
-    await this.repo.remove(user);
+  public create(createUser: CreateUserDto): Partial<User> {
+    const user = this.convertToUser(createUser);
+    this.users.push(user);
+    return this.returnUser(user);
+  }
+
+  public findAll() {
+    return this.users.map((user) => {
+      return this.returnUser(user);
+    });
+  }
+
+  public findOne(id: string): Partial<User> {
+    const user = this.users.find((user) => user.id === id);
+    if (!user) throw new NotFoundException();
+    return this.returnUser(user);
+  }
+
+  public update(id: string, updateUserDto: UpdateUserDto): Partial<User> {
+    const user = this.users.find((user) => user.id === id);
+    if (!user) throw new NotFoundException();
+    if (updateUserDto.firstName) user.firstName = updateUserDto.firstName;
+    if (updateUserDto.lastName) user.lastName = updateUserDto.lastName;
+    return this.returnUser(user);
+  }
+
+  public remove(id: string) {
+    const index = this.users.findIndex((prop) => prop.id === id);
+    if (index < 0) throw new NotFoundException();
+    this.users.splice(index, 1);
   }
 }

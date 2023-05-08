@@ -1,21 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger/dist';
-import { Exclude } from 'class-transformer';
-import { UserInterface } from '../interfaces';
-
+import { UserInterface } from './../interfaces/user.interface';
 export class UserDto implements UserInterface {
   id: string;
-  username: string;
   firstName: string;
   lastName: string;
+  username: string;
+  password: string;
+  salt: string;
   email: string;
   active: boolean;
-
-  @Exclude()
   createdAt: Date;
-  @Exclude()
   updatedAt: Date;
-  @Exclude()
-  password: string;
-  @Exclude()
-  salt: string;
 }
